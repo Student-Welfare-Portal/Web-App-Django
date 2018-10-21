@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'dashboard',
-    'orders'
+    'orders',
+    'medical'
 ]
 
 MIDDLEWARE = [
