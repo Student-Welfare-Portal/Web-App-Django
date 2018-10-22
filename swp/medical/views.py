@@ -19,13 +19,24 @@ def medical_leave(request):
     return render(request,'medical/medical_leave.html',{'form':form})
 @login_required
 def sendMessage(request):
-    subject=request.POST['subject']
-    to_email=request.POST['to']
-    body=request.POST['body']
-    message=render_to_string('medical/message.html',{'from':request.user.username,'body':body})
-    email=EmailMessage(subject,message,to=[to_email])
-    email.send()
-    return render(request,'medical/success.html')
+    error_message=""
+    if request.method == 'POST':
+        subject=request.POST['subject']
+        to_email='iiitsmedical@gmail.com'   #hardcoded to avoid any hacks
+        body=request.POST['body']
+        if(len(subject)==0):
+            error_message="Subject can't be empty"
+            if(len(body)==0):
+                error_message="Subject and Message can't be empty"
+            return render(request,'medical/medical_message.html',{"error_message":error_message})
+        elif(len(body)==0):
+            error_message="Message can't be empty"
+            return render(request,'medical/medical_message.html',{"error_message":error_message})
+        message=render_to_string('medical/message.html',{'from':request.user.username,'body':body})
+        email=EmailMessage(subject,message,to=[to_email])
+        email.send()
+        return render(request,'medical/success.html')
+    return render(request,'medical/medical_message.html',{"error_message":error_message})
 def getDate(s):
     s=s.split('-')
     year=int(s[0])
@@ -34,15 +45,29 @@ def getDate(s):
     return datetime.date(year,month,day)
 @login_required
 def applyLeave(request):
-    leave_from=request.POST['leave_from']
-    leave_to=request.POST['leave_to']
-    hometown=request.POST['hometown']
-    reason=request.POST['reason']
-    student=Student.objects.get(user=request.user)
-    leave_from=getDate(leave_from)
-    leave_to=getDate(leave_to)
-    print(student,leave_from,leave_to,hometown,reason)
-
-    leave=MedicalLeave(leave_from=leave_from,leave_to=leave_to,hometown=hometown,reason=reason,student=student)
-    leave.save()
-    return render(request,'medical/success.html')
+    if request.method == 'POST':
+        form = MedicalLeaveForm(request.POST)
+        if form.is_valid():
+            leave_form=form.save(commit=False)
+            leave_form.student=Student.objects.get(user=request.user)
+            leave_form.leave_from=getDate(request.POST['leave_from'])
+            leave_form.leave_to=getDate(request.POST['leave_to'])
+            if(leave_form.leave_from>=leave_form.leave_to):
+                error_message="Please enter valid From and To dates"
+                return render(request, 'medical/medical_leave.html', {
+                'form': form,
+                'error_message':error_message
+                })
+            leave_form.save()
+            return render(request, 'medical/success.html')
+        else:
+            error_message="Please enter date in YYYY-MM-DD format"
+            return render(request, 'medical/medical_leave.html', {
+            'form': form,
+            'error_message':error_message
+            })
+    form = MedicalLeaveForm()
+    return render(request, 'medical/medical_leave.html', {
+    'form': form,
+    'error_message':''
+    })

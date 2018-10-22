@@ -119,6 +119,14 @@
 
                   </th>
                 </tr>
+                {% if error_message != '' %}
+                  <tr>
+                    <td><font color="red">{{ error_message }}</font></td>
+                    <td>
+
+                    </td>
+                  </tr>
+                {% endif %}
               </thead>
               <tbody>
                 <form action="{% url 'medical:sendmessage' %}" method='post'>
